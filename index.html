@@ -86,6 +86,7 @@ input[type=range]{width:100%;max-width:420px}
 <header>
   <h1>Hogwarts Cyber Mystery</h1>
   <div class="mono" id="hintinfo" style="color:var(--mute);font-size:.8rem"></div>
+  <button id="resetBtn" type="button" style="padding:6px 10px;font-size:.8rem;display:none">Reset round</button>
   <div id="timer" class="mono">20:00</div>
 </header>
 <main>
@@ -110,8 +111,8 @@ input[type=range]{width:100%;max-width:420px}
       <li>Stuck? Press <b>Hint</b>. Each hint costs <b>20 seconds</b>.</li>
       <li>Wrong answers cost nothing. Just try again!</li>
     </ul>
-    <div class="row"><label for="mins">Time limit:</label>
-      <select id="mins"><option value="15">15 minutes</option><option value="20" selected>20 minutes</option><option value="25">25 minutes</option></select></div>
+    <div class="row"><label for="mins"><b>Round timer</b> (minutes, set by facilitator):</label>
+      <input type="number" id="mins" min="1" max="180" step="0.5" value="20" style="width:90px;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--text)"></div>
     <div class="row"><label for="startCode">Start code (from your teacher):</label>
       <input type="text" id="startCode" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="code" style="max-width:140px"></div>
     <div class="row"><button class="primary big" id="startBtn">Start the mystery</button></div>
@@ -147,6 +148,7 @@ input[type=range]{width:100%;max-width:420px}
     <div class="mono" style="color:var(--accent)">// ACCESS GRANTED</div>
     <h2>Network restored.</h2>
     <p class="big" id="winStats"></p>
+    <div class="row"><button class="primary" type="button" id="againBtn">Start a new round</button></div>
     <div class="alert mono" style="border-color:var(--accent);background:var(--okbg);color:#c9ffe9">&gt; HEX-HACKER: "Curses! Foiled by a bunch of clever kids."</div>
   </div>
   <div class="panel">
@@ -166,7 +168,7 @@ input[type=range]{width:100%;max-width:420px}
 </main>
 
 <script>
-const DATA = {"s1":"9a50462dc888fd88f2045aaf35fd4f4e50095e044d9157313aa9358c63d9bad3","s2":["55fd484dd4236df2fd4ea949fe63c3cb935b7878192017c962b32733742a8de3","ace5983685cb82994e91df9e4719ac6be984b4f71e1662d346aaf4f9f03ac196","f3f4bb57fabc595fc039e8c154e40e77788b1a077f02126a6e5f791e36661a41","5fe1bebdff3e4af5b19c556f08cb0ee55a040a5854440da61da1474f5da5968b"],"s3":"be8a3a86349a3da1e0ab94878ebc67b4520235b6d4f42856706370ab10bd2b07","cA":"YMJ XJHWJY XUJQQ BTWI NX QZRTX","s4":["030f6eaf6f95bb7e8828a068448a8654e32d0dfd087e2ad9a9dfc23ab6e12709","ce28cbfbd5a8289ccb75a97c535b6eb81bd124440124fef14c29f7b9f6b695d2","3c6a52594e49efe574327b6bde747d416100b4647db43369d85a7fd19a9184e4","abf9f22d319a961f5236201ef9762ceef441c1b3a5798a0317a1c3a7a956812f","316b38b49788340f13710a221945b51799fb57dd46687bc74e62e7bf953b5911","fcf1fc8e0d097256ef3cdf382e2ea7a340605cfc2bc12a6208ac0c2e30c49b77"],"s5":"857d05c2ed32e5f683b88ca55348c25e5e0c16e96cb924fc1e7fc75958bd253f","start":"9bb977edeb870eed379a89499f80439404c87cc2a30e97e6ca5cd43d6546b475","enc":[4,6,8,7,2,2],"vault":"28a7af6f2378bf0b2e33044f02a20e24bd1c8cd749684c52ec89cbee6f1ea165","t":{"salt":"5bHxz4R8RyuYI4qKH5FprQ==","iv":"FkDB08hQ7t4wmUch","ct":"JLzXdIQbKer6FF7XKzkYQkSWM7KXkL8/hZYn+oG6DZV7/jxKQ0Z5gdet5afDdmGAAjZE77fGIEXkq/22YzsRRn/8ay0XrEK2UwseCiWfTYCat9ap7N78v+dvgRcf5yaKxiCPjvRfcVKVCNCJEL/ndSSyVCPweOaz30BCSTc/4/4q8imzDD/Jlnt/Cjg+f9OVw8fbDz0DDEu8GVQCLbuNy3yqEqZ7rEp+C9JuEaqX34l/zmLeAL+Vj3wDcDZDQ5ToVE2D8ZaRYi8G0LHw0iEUCI1+KT5LSt/tceYjGKAIM1f9hSVmlwBgxOkX5sPAaIkNQ97nXrdPTWfOVVaPQiIjMKCt5EeA2okKtTnWGhiTU8dnuSY12nMnbHtc4aThqY4zfrYAKBEmdKWz5/WWxYWfvM9FLRIP9AZzBdjIl04a/+4UIaOn2LtyiT3AWLeQM/8mCJtStsLhVmdFLX4na6+xZIR2ahol/um5f305LjqBVSequd8hQ3cjbzQBFrKe83YyrCjizZaAx6O0RVIp/XgPo3VHr4UZfHs3mJ92CFxbudceodu3U1BfNrIPV3uvy2mikulLLysFnk6eJEmC4NTeDiWSHs6umtM4IA+lXDNtS/2KD6NgJNqAci1FLNsDh44zBpd/ubH6hrMavMAS5iQMnWzv9F+5UBceGzX3/m10DeD3cwy8tw1quylJpIGT5DeuxP3EYVXt7jQUhr90W/BM6S/lfoTKKImxYHqo9Dy3ezBlfeeOZhZijc+XFkH0fgx1UFFWj08JCIKKi7mJXaS1zQsY6lokHFDzwyBuTHEg9G+sSpTDi0I0kj1QwRtAguH0R+kWEMonywck8W3KmOx//QFnD9mGMY0+7dJN8/0/BI/oXHmlvgCdyDj8zXdLURvCpizDHtHfaOaSQStVV0d5fD6FxMd258iXxUxxU8mx/3Mdp7IdbWR73qqJODCNrtRXlAfCaFQLuYH523R2Ak2TMwfWch5s2z0ThVLxu2wDchVNRiQHOXywr2hUjjkdmL3UQEXyn2SpPrR8Bm6WfFW6ebhqp/6F7QFmfjhQAXMaN/SEWgT9xctRun8SmpqRMkgRbMZLkpJxdxBI7XojADbVx2uvOg69j8tfxiUJbC6Z+zT8DpHBL6Q15zAdR4/lObk0oZapsikDQbYsh7R5D6neA0G/3C1JFntcwlYqd6tTMNSuMkiah1Ys+Jao3xlmvu/VVATxn0sqKSZTjmBwi2dzJ8iGYBvXi16huj166Ma6/LLEYBL+LUya/raAryGvJk+uJ1mxCVvSG1bgHqUKvk46rjgUi453LnZ6LlNIq8SbVnTvIDbRlvAwG6wICexGIFQRxSlxN9/BLqKgbRyfHb0/hZjYvS7WC5t+iWbiND+NpcFsFCq9cOwsqLLX/RuxhIljd08zs197+bQQyKU+51QO0Pbc9jSO04vSTz5GQmk=","iter":200000}};
+const DATA = {"s1":"9a50462dc888fd88f2045aaf35fd4f4e50095e044d9157313aa9358c63d9bad3","s2":["55fd484dd4236df2fd4ea949fe63c3cb935b7878192017c962b32733742a8de3","ace5983685cb82994e91df9e4719ac6be984b4f71e1662d346aaf4f9f03ac196","f3f4bb57fabc595fc039e8c154e40e77788b1a077f02126a6e5f791e36661a41","5fe1bebdff3e4af5b19c556f08cb0ee55a040a5854440da61da1474f5da5968b"],"s3":"be8a3a86349a3da1e0ab94878ebc67b4520235b6d4f42856706370ab10bd2b07","cA":"YMJ XJHWJY XUJQQ BTWI NX QZRTX","s4":["030f6eaf6f95bb7e8828a068448a8654e32d0dfd087e2ad9a9dfc23ab6e12709","ce28cbfbd5a8289ccb75a97c535b6eb81bd124440124fef14c29f7b9f6b695d2","3c6a52594e49efe574327b6bde747d416100b4647db43369d85a7fd19a9184e4","abf9f22d319a961f5236201ef9762ceef441c1b3a5798a0317a1c3a7a956812f","316b38b49788340f13710a221945b51799fb57dd46687bc74e62e7bf953b5911","fcf1fc8e0d097256ef3cdf382e2ea7a340605cfc2bc12a6208ac0c2e30c49b77"],"s5":"857d05c2ed32e5f683b88ca55348c25e5e0c16e96cb924fc1e7fc75958bd253f","start":"9bb977edeb870eed379a89499f80439404c87cc2a30e97e6ca5cd43d6546b475","enc":[4,6,8,7,2,2],"vault":"28a7af6f2378bf0b2e33044f02a20e24bd1c8cd749684c52ec89cbee6f1ea165","t":{"salt":"mobkZxLAapPB57H4dSyBCg==","iv":"ilatdtbrwU9AizYI","ct":"v8NrHaRALVahAKCNptIQNaeEQx60/Wwv3ofF+dU1R4H9aBD2RD001p4NJAVQC37Wcj263y5nG0wlaUmhHxmESM+Ef7xHU9IfAKv7xuQKUGcnjDNiau8Rp9Of5gDekuIdssgYxf8hgaukuCVQxrkrwPVSxy2VYVI71s0b6QVnNns//yY8qkWJ5xlSZiCDtoInCTAoPOscpFJA1Z7gtKV5asbu0Lz0RuPokGtIXVMl+AmOmfOdjtOS7PH3R7Wg1aXxvOOAD86ug+YDkUPfIKNvtzKkrBcAdZ+zQrsreEXCJaXAlvcmky3XnwySruk7zTe0w4aI8jz33fmPL/zrWrZzcYWkEe6qHKEVLX9f1f01DdK8FHamcBOiLedj3VHKh6D1EOSg+HI+i+bU7GDv0jEhWLjWAf272wl+ecKXLeDXoioi2DbsHRN16Y0jI7CgvK+nbqyQlqh0pU3QttJpHhe77ridjdAeR97KMvqotNP0g2HVL5QRXq9UKKA0229W2FCfF+OYGDfUg9YGwzuFVGoXWJqfuOErbRIhiD7CHOCz+2qcW5SMPCblD9fN4bOk9zfF2Oc28VgysjY5GeL+roYUc5cDSiTZNNOM3eMQTKYNFnpANjVP34uUc9AIJW7u9G5zDBBL1iyLkYrfeCR4ZbjLVNs9d5zLIeHE+yD869mzcFSsH1w2z1yyZdOkVNnvmX5uDX/VhAVFVZbBlNoKqs0B2864VX16C6e4T/B3t55jEP26Yp6mNQsduUDALg+6YhcDbXzCRLtC/9w0wUCInhD3gbE33CkHbzeyzSItyHJ3b3zoDrDKIUM1zSCwpa+kgsxR5t9zf69WRbppyldBI/iBa92Azj+6vtlW2VeH4MDONJCdOO4WvBcmcrR3VQATEGnz900xlaBRZO1IXeknBI0zqwFthsa0Pp7LgwD0YUkXHe/miLayM0fhjR8PXCJ2Mco8L3gx8OYt88th8wGPNYAPBv2nX3oQgBcG/iIr8GBfQnbci7RkMJfHlgKdALbq5Gj84YET2rVM3J97CC+AZ318pQn+PQhwt5dMZT2BF9V1acX6pVLY0pley3dyrz2OVvB8fi9sEv2vnuzNVlvLQE2aokmx+ZwoWajGwasAsAIAg+tqtD6hPJaYv5AAoysxwJ0ThLoKhLMoF5WE0gfXHF6Dm2lSFPC+G2Tp8ms82CyaPEo5dkEdg39fean05dMC0QUVei24v2kGEjm4l9rdxnKcHBtLGPPqHPBhbcALFfdd5bAZYtxVvDJ/+irJAiiwcjAXvjkZfSf6OM3mEiRrawsYRUVUPhTTap02bordIKO/BzSavxPzGHiCEzt9K3yVOoYBM0qI1SOYsHcfTgplu8+aS27weEQUe3AjZxWHIjdTmvUyFBESeFnt/DRQtyvFuGgGehzF+oCtID0PgcHi9sqVLHF8Sx9qx/BW5Iwvb2s=","iter":200000}};
 const $ = s => document.querySelector(s);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm = s => s.trim().toLowerCase().replace(/\s+/g,' ');
@@ -446,7 +448,8 @@ $('#tpw').addEventListener('keydown',e=>{ if(e.key==='Enter') unlockTeacher(); }
 $('#startCode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#startBtn').click(); });
 $('#startBtn').onclick=()=>{
   if(H('start:'+$('#startCode').value.trim())!==DATA.start){ const f=$('#startFb'); f.className='fb bad'; f.textContent='Wrong start code. Ask your teacher.'; return; }
-  const mins=+$('#mins').value||20;
+  const mins=Math.min(180,Math.max(0.5,parseFloat($('#mins').value)||20));
+  $('#resetBtn').style.display='';
   deadline=Date.now()+mins*60000; timer=setInterval(tick,500); tick();
   show('game'); renderNav(); renderStation();
 };
@@ -462,6 +465,9 @@ $('#vaultBtn').onclick=()=>{
   } else { fb.className='fb bad'; fb.textContent='Wrong code. Type the six magic numbers in order, station 1 to 6.'; }
 };
 $('#vaultIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#vaultBtn').click(); });
+$('#againBtn').onclick=()=>location.reload();
+let rArm=false;
+$('#resetBtn').onclick=()=>{ const b=$('#resetBtn'); if(!rArm){ rArm=true; b.textContent='Click again to confirm'; setTimeout(()=>{rArm=false;b.textContent='Reset round';},3000);} else location.reload(); };
 </script>
 
 </body>
