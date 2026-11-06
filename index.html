@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hogwarts Cyber Mystery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+</head>
+<body>
+<style>
+/* Layout: terminal-style incident console. Sticky timer bar, station tabs, one clue-card panel at a time, vault at the bottom. Single dark look by design. */
+:root{--bg:#0b1020;--panel:#131a30;--card:#1a2340;--line:#2b3862;--text:#e8ecff;--mute:#9aa6d1;--accent:#35e0a1;--warn:#ffb84d;--bad:#ff5c7a;--blue:#6ea8ff;--ink:#04120c;--okbg:#0f2a22;--badbg:#2a1322;--field:#0c1226;--tab:#1f2d57;--tagbg:#22305a;--tagfg:#bcd0ff;--task:#162044;--th:#1c274b;--mono:ui-monospace,Menlo,Consolas,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--bg)}
+.mono{font-family:var(--mono)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:880px;margin:0 auto}
+header h1{font-size:1rem;margin:0;flex:1;min-width:140px;letter-spacing:.04em;text-transform:uppercase}
+#timer{font-size:1.5rem;font-weight:700;color:var(--accent);min-width:80px;text-align:right}
+#timer.low{color:var(--warn)} #timer.crit{color:var(--bad)}
+@media (prefers-reduced-motion:no-preference){#timer.crit{animation:p 1s infinite}}
+@keyframes p{50%{opacity:.5}}
+main{max-width:880px;margin:0 auto;padding-top:16px}
+.screen{display:none}.screen.on{display:block}
+.hero{padding:24px 0}
+.hero h2{font-size:2rem;margin:.2em 0;text-wrap:balance}
+.alert{border:1px solid var(--bad);background:var(--badbg);color:#ffd0da;border-radius:10px;padding:14px;margin:16px 0;overflow-wrap:anywhere}
+button,select{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 16px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:var(--accent);color:var(--ink);border-color:var(--accent);font-weight:700}
+.nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.nav button{text-align:left;padding:10px;min-width:0}
+.nav button.on{border-color:var(--blue);background:var(--tab)}
+.nav button.done{border-color:var(--accent)}
+.nav small{display:block;color:var(--mute)}
+.frags{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 14px;color:var(--mute)}
+.slots{display:flex;gap:6px}
+.slot{width:34px;height:40px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;font-weight:700;color:var(--accent)}
+.slot.f{border-style:solid;border-color:var(--accent);background:var(--okbg)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel h3{margin:0 0 4px;font-size:1.3rem}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.tag{font-size:.75rem;padding:2px 9px;border-radius:99px;background:var(--tagbg);color:var(--tagfg)}
+.story{color:var(--mute);margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;overflow-wrap:anywhere}
+.card .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--warn);margin-bottom:4px}
+.task{padding:10px 14px;margin:14px 0;background:var(--task);border-radius:8px}
+input[type=text]{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--text);width:100%;max-width:420px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.opt{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;cursor:pointer}
+.opt input{margin-top:5px;width:18px;height:18px;flex:none}
+.opt:has(input:checked){border-color:var(--blue);background:var(--tab)}
+.email{display:block;padding:0}
+.email .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-size:.9rem;overflow-wrap:anywhere}
+.email .bd{padding:10px 14px;font-size:.93rem;overflow-wrap:anywhere}
+.email .lnk{color:var(--blue);text-decoration:underline}
+.email .real{display:block;font-size:.78rem;color:var(--mute);margin-top:4px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+th{background:var(--th)}
+.fb{margin-top:10px;padding:10px 12px;border-radius:10px;display:none;white-space:pre-line;overflow-wrap:anywhere}
+.fb.bad{display:block;background:var(--badbg);border:1px solid var(--bad)}
+.fb.ok{display:block;background:var(--okbg);border:1px solid var(--accent)}
+.reward{margin-top:12px;padding:12px;border:2px solid var(--accent);border-radius:12px;background:var(--okbg);text-align:center;display:none}
+.reward b{font-size:2rem;color:var(--accent)}
+.hintbar{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.hint{color:var(--warn);font-size:.92rem;margin-top:8px}
+.meter{height:10px;border-radius:99px;background:var(--field);overflow:hidden;margin:8px 0}
+.meter i{display:block;height:100%;width:0;background:var(--bad);transition:width .2s}
+ul.req{list-style:none;padding:0;margin:8px 0}
+ul.req li{color:var(--mute)} ul.req li.ok{color:var(--accent)}
+ul.req li::before{content:"○ "} ul.req li.ok::before{content:"✔ "}
+.vault{margin-top:18px;border:2px solid var(--blue)}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-top:20px}
+.refl li{margin:8px 0}
+input[type=range]{width:100%;max-width:420px}
+.big{font-size:1.15rem}
+.seg{display:flex;gap:6px}
+.seg button.on{border-color:var(--blue);background:var(--tab)}
+@media (max-width:520px){.hero h2{font-size:1.5rem}}
+</style>
+
+<header>
+  <h1>Hogwarts Cyber Mystery</h1>
+  <div class="mono" id="hintinfo" style="color:var(--mute);font-size:.8rem"></div>
+  <div id="timer" class="mono">20:00</div>
+</header>
+<main>
+
+<section id="intro" class="screen on">
+  <div class="hero">
+    <div class="mono" style="color:var(--bad)">// OWL POST · URGENT</div>
+    <h2>Hogwarts' computers have been hacked!</h2>
+    <p class="big">Someone has locked every magic computer in the castle: the library, the Owlery and the Great Hall menu. The <b>Famous Five</b> and the <b>Secret Seven</b> have arrived to help <b>Harry, Hermione and Ron</b> catch the culprit.</p>
+  </div>
+  <div class="alert mono">
+    &gt; NETWORK LOCKED<br>
+    &gt; NOTE FROM THE HEX-HACKER: "Wizards and Muggles both make mistakes. Catch me if you can!"<br>
+    &gt; 6 stations are infected. Each hides one <b>magic number</b>.<br>
+    &gt; Collect all 6 and type them in order, station 1 to 6, to open the Vault.
+  </div>
+  <div class="panel">
+    <h3>How to play</h3>
+    <ul>
+      <li>You are a team of young detectives. Share the reading and the thinking.</li>
+      <li>Do the stations in <b>any order</b>. Read every clue card.</li>
+      <li>Stuck? Press <b>Hint</b>. Each hint costs <b>20 seconds</b>.</li>
+      <li>Wrong answers cost nothing. Just try again!</li>
+    </ul>
+    <div class="row"><label for="mins">Time limit:</label>
+      <select id="mins"><option value="15">15 minutes</option><option value="20" selected>20 minutes</option><option value="25">25 minutes</option></select></div>
+    <div class="row"><label for="startCode">Start code (from your teacher):</label>
+      <input type="text" id="startCode" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="code" style="max-width:140px"></div>
+    <div class="row"><button class="primary big" id="startBtn">Start the mystery</button></div>
+    <div class="fb" id="startFb"></div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="nav" id="nav"></div>
+  <div class="frags mono">Fragments found: <span class="slots" id="slots"></span></div>
+  <div id="station"></div>
+  <div class="panel vault">
+    <h3>Gringotts Vault</h3>
+    <p class="story">Collect all 6 magic numbers, then type them as one 6-digit code in station order (1 to 6).</p>
+    <div class="row">
+      <input type="text" id="vaultIn" inputmode="numeric" maxlength="6" placeholder="6 digits" disabled style="max-width:180px;letter-spacing:.3em" aria-label="Vault code">
+      <button class="primary" id="vaultBtn" disabled>Unlock</button>
+    </div>
+    <div class="fb" id="vaultFb"></div>
+  </div>
+  <details>
+    <summary>Teacher answer key (password protected)</summary>
+    <div id="lock" style="margin-top:10px">
+      <div class="row"><input type="text" id="tpw" placeholder="Teacher password" autocomplete="off" aria-label="Teacher password"><button id="tbtn">Unlock</button></div>
+      <div class="fb" id="tfb"></div>
+    </div>
+    <div id="teacher"></div>
+  </details>
+</section>
+
+<section id="win" class="screen">
+  <div class="hero">
+    <div class="mono" style="color:var(--accent)">// ACCESS GRANTED</div>
+    <h2>Network restored.</h2>
+    <p class="big" id="winStats"></p>
+    <div class="alert mono" style="border-color:var(--accent);background:var(--okbg);color:#c9ffe9">&gt; HEX-HACKER: "Curses! Foiled by a bunch of clever kids."</div>
+  </div>
+  <div class="panel">
+    <h3>Debrief: talk it over</h3>
+    <p class="story">IB connection: <b>Responsibility · Relationships · Ethics</b></p>
+    <ol class="refl">
+      <li><b>Responsibility:</b> Which of your own habits would the Hex-Hacker have used? What will you change this week?</li>
+      <li><b>Relationships:</b> A friend asks for your password "to be nice". What do you say? How does sharing it affect trust?</li>
+      <li><b>Ethics:</b> You find a classmate's account left logged in. What should you do, and why?</li>
+      <li><b>Think bigger:</b> Metadata revealed who, when and where. Is it fair for a school to track this? Where is the line between safety and privacy?</li>
+      <li><b>Technology understanding:</b> Why is a long passphrase stronger than a short complicated password? What does "key" mean in encryption?</li>
+    </ol>
+    <h3 style="margin-top:20px">Skills you used</h3>
+    <div id="skills"></div>
+  </div>
+</section>
+</main>
+
+<script>
+const DATA = {"s1":"9a50462dc888fd88f2045aaf35fd4f4e50095e044d9157313aa9358c63d9bad3","s2":["55fd484dd4236df2fd4ea949fe63c3cb935b7878192017c962b32733742a8de3","ace5983685cb82994e91df9e4719ac6be984b4f71e1662d346aaf4f9f03ac196","f3f4bb57fabc595fc039e8c154e40e77788b1a077f02126a6e5f791e36661a41","5fe1bebdff3e4af5b19c556f08cb0ee55a040a5854440da61da1474f5da5968b"],"s3":"be8a3a86349a3da1e0ab94878ebc67b4520235b6d4f42856706370ab10bd2b07","cA":"YMJ XJHWJY XUJQQ BTWI NX QZRTX","s4":["030f6eaf6f95bb7e8828a068448a8654e32d0dfd087e2ad9a9dfc23ab6e12709","ce28cbfbd5a8289ccb75a97c535b6eb81bd124440124fef14c29f7b9f6b695d2","3c6a52594e49efe574327b6bde747d416100b4647db43369d85a7fd19a9184e4","abf9f22d319a961f5236201ef9762ceef441c1b3a5798a0317a1c3a7a956812f","316b38b49788340f13710a221945b51799fb57dd46687bc74e62e7bf953b5911","fcf1fc8e0d097256ef3cdf382e2ea7a340605cfc2bc12a6208ac0c2e30c49b77"],"s5":"857d05c2ed32e5f683b88ca55348c25e5e0c16e96cb924fc1e7fc75958bd253f","start":"9bb977edeb870eed379a89499f80439404c87cc2a30e97e6ca5cd43d6546b475","enc":[4,6,8,7,2,2],"vault":"28a7af6f2378bf0b2e33044f02a20e24bd1c8cd749684c52ec89cbee6f1ea165","t":{"salt":"5bHxz4R8RyuYI4qKH5FprQ==","iv":"FkDB08hQ7t4wmUch","ct":"JLzXdIQbKer6FF7XKzkYQkSWM7KXkL8/hZYn+oG6DZV7/jxKQ0Z5gdet5afDdmGAAjZE77fGIEXkq/22YzsRRn/8ay0XrEK2UwseCiWfTYCat9ap7N78v+dvgRcf5yaKxiCPjvRfcVKVCNCJEL/ndSSyVCPweOaz30BCSTc/4/4q8imzDD/Jlnt/Cjg+f9OVw8fbDz0DDEu8GVQCLbuNy3yqEqZ7rEp+C9JuEaqX34l/zmLeAL+Vj3wDcDZDQ5ToVE2D8ZaRYi8G0LHw0iEUCI1+KT5LSt/tceYjGKAIM1f9hSVmlwBgxOkX5sPAaIkNQ97nXrdPTWfOVVaPQiIjMKCt5EeA2okKtTnWGhiTU8dnuSY12nMnbHtc4aThqY4zfrYAKBEmdKWz5/WWxYWfvM9FLRIP9AZzBdjIl04a/+4UIaOn2LtyiT3AWLeQM/8mCJtStsLhVmdFLX4na6+xZIR2ahol/um5f305LjqBVSequd8hQ3cjbzQBFrKe83YyrCjizZaAx6O0RVIp/XgPo3VHr4UZfHs3mJ92CFxbudceodu3U1BfNrIPV3uvy2mikulLLysFnk6eJEmC4NTeDiWSHs6umtM4IA+lXDNtS/2KD6NgJNqAci1FLNsDh44zBpd/ubH6hrMavMAS5iQMnWzv9F+5UBceGzX3/m10DeD3cwy8tw1quylJpIGT5DeuxP3EYVXt7jQUhr90W/BM6S/lfoTKKImxYHqo9Dy3ezBlfeeOZhZijc+XFkH0fgx1UFFWj08JCIKKi7mJXaS1zQsY6lokHFDzwyBuTHEg9G+sSpTDi0I0kj1QwRtAguH0R+kWEMonywck8W3KmOx//QFnD9mGMY0+7dJN8/0/BI/oXHmlvgCdyDj8zXdLURvCpizDHtHfaOaSQStVV0d5fD6FxMd258iXxUxxU8mx/3Mdp7IdbWR73qqJODCNrtRXlAfCaFQLuYH523R2Ak2TMwfWch5s2z0ThVLxu2wDchVNRiQHOXywr2hUjjkdmL3UQEXyn2SpPrR8Bm6WfFW6ebhqp/6F7QFmfjhQAXMaN/SEWgT9xctRun8SmpqRMkgRbMZLkpJxdxBI7XojADbVx2uvOg69j8tfxiUJbC6Z+zT8DpHBL6Q15zAdR4/lObk0oZapsikDQbYsh7R5D6neA0G/3C1JFntcwlYqd6tTMNSuMkiah1Ys+Jao3xlmvu/VVATxn0sqKSZTjmBwi2dzJ8iGYBvXi16huj166Ma6/LLEYBL+LUya/raAryGvJk+uJ1mxCVvSG1bgHqUKvk46rjgUi453LnZ6LlNIq8SbVnTvIDbRlvAwG6wICexGIFQRxSlxN9/BLqKgbRyfHb0/hZjYvS7WC5t+iWbiND+NpcFsFCq9cOwsqLLX/RuxhIljd08zs197+bQQyKU+51QO0Pbc9jSO04vSTz5GQmk=","iter":200000}};
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => s.trim().toLowerCase().replace(/\s+/g,' ');
+function caesar(t, k){ return t.replace(/[A-Z]/g, c => String.fromCharCode(((c.charCodeAt(0)-65+k)%26+26)%26+65)); }
+
+/* SHA-256 (sync) so answers can be checked without being stored in the page */
+function sha256(msg){
+  const b=unescape(encodeURIComponent(msg));
+  const primes=[];for(let n=2;primes.length<64;n++){if(primes.every(p=>n%p))primes.push(n);}
+  const fr=x=>((x-Math.floor(x))*4294967296)>>>0;
+  const K=primes.map(p=>fr(Math.cbrt(p)));
+  let Hh=primes.slice(0,8).map(p=>fr(Math.sqrt(p)));
+  const by=[];for(let i=0;i<b.length;i++)by.push(b.charCodeAt(i));
+  const l=by.length*8; by.push(0x80); while(by.length%64!==56)by.push(0);
+  for(let i=7;i>=0;i--)by.push(i>3?0:(l>>>(i*8))&255);
+  const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+  for(let o=0;o<by.length;o+=64){
+    const w=[];for(let i=0;i<16;i++)w[i]=(by[o+4*i]<<24|by[o+4*i+1]<<16|by[o+4*i+2]<<8|by[o+4*i+3])>>>0;
+    for(let i=16;i<64;i++){const s0=rotr(w[i-15],7)^rotr(w[i-15],18)^(w[i-15]>>>3);const s1=rotr(w[i-2],17)^rotr(w[i-2],19)^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)>>>0;}
+    let [a,b2,c,d,e,f,g,h]=Hh;
+    for(let i=0;i<64;i++){
+      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25), ch=(e&f)^(~e&g), t1=(h+S1+ch+K[i]+w[i])>>>0;
+      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22), maj=(a&b2)^(a&c)^(b2&c), t2=(S0+maj)>>>0;
+      h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b2;b2=a;a=(t1+t2)>>>0;
+    }
+    Hh=Hh.map((x,i)=>(x+[a,b2,c,d,e,f,g,h][i])>>>0);
+  }
+  return Hh.map(x=>x.toString(16).padStart(8,'0')).join('');
+}
+
+const H = t => sha256('opl1|'+t);
+const digitFor = (sid,key) => (DATA.enc[sid-1] + parseInt(H('k'+sid+'|'+key).slice(0,6),16)%10) % 10;
+
+const STR = { DF:'Digital fluency', CT:'Computational thinking', DCR:'Digital creation', DC:'Digital citizenship', TU:'Technology understanding' };
+
+const EMAILS = [
+ {from:'Gringotts Bank &lt;help@gr1ngotts-vault.biz&gt;', subj:'URGENT! Your vault is FROZEN!',
+  body:'Dear customer, send us your vault key number and your password RIGHT NOW or we will close your vault! <span class="lnk">Click here to unfreeze</span><span class="real">Link really goes to: http://gr1ngotts-vault.biz/login</span>',
+  why:'It panics you, uses a spelling trick in the address (gr1ngotts), and asks for your password.'},
+ {from:'Professor McGonagall &lt;m.mcgonagall@hogwarts.edu&gt;', subj:'Transfiguration homework due Friday',
+  body:'Good afternoon, class. Please hand in your Transfiguration homework on Friday. No need to reply to this email. Minerva McGonagall',
+  why:'Right school address, a normal request, no links and no panic.'},
+ {from:'Mega Prizes &lt;winner@free-brooms-4u.net&gt;', subj:'You WON a free Firebolt broomstick!!!',
+  body:'Congratulations! Type your full name, home address and birthday to claim your prize: <span class="lnk">Claim my broomstick</span><span class="real">Link really goes to: http://free-brooms-4u.net/claim</span>',
+  why:'Too good to be true, and it asks for your private information.'},
+ {from:'Madam Pince &lt;library@hogwarts.edu&gt;', subj:'Reminder: 2 library books due Monday',
+  body:'Hello! This is a friendly reminder that your 2 library books are due on Monday. Please return them to the library desk. Thank you!',
+  why:'Right school address, no links, and it only asks you to return books.'}
+];
+
+const SCEN = [
+ 'Ron gives his password to a new friend so the friend can "borrow" his account.',
+ 'Hermione makes a long password with letters, numbers and symbols, and tells nobody.',
+ 'Peter (Secret Seven) posts a photo of the secret shed online. The street address and door code are in the picture.',
+ 'Anne (Famous Five) sees an unkind comment about Dick. She does not reply, and she tells a teacher.',
+ 'Neville clicks a pop-up that says "Free magic wand! Type your name, school and home address."',
+ 'Janet asks her friends if it is OK before she shares a group photo.'
+];
+
+const FILES = [
+ ['homework_potions.docx','hermione','Mon 16:10'],
+ ['quidditch_plan.pdf','mcgonagall','Tue 09:00'],
+ ['treasure_map.jpg','george','Sat 14:30'],
+ ['sh4d0w_k3y.txt','unknown_user','Thu 03:12'],
+ ['lunch_menu.docx','hagrid','Wed 12:00'],
+ ['timetable.pdf','dumbledore','Fri 08:15']
+];
+
+const BLOCK = ['password','harry','potter','hermione','hogwarts','qwerty','123456','dumbledore','dobby','letmein'];
+
+const stations = [
+ { id:1, name:'Crack the Password', strands:['CT','DC'],
+   story:'Hagrid is locked out of his computer! The Hex-Hacker guessed his password easily. Use the clues to guess it too, so you learn why weak passwords are a problem.',
+   cards:[
+     ['Hagrid\'s desk','There is a big photo of his pet dog, <b>Fang</b>, with the words "Best friend ever!"'],
+     ['Hagrid\'s hut','Hagrid\'s lucky number is painted on his door: <b>7</b>.'],
+     ['The password note (found on his monitor)','"My password is my <b>dog\'s name</b>, then my <b>lucky number</b>, then a <b>!</b>"']],
+   task:'What is Hagrid\'s password?',
+   ui:()=>`<div class="row"><input type="text" id="a1" placeholder="type the password" autocomplete="off" spellcheck="false" aria-label="Password guess"><button class="primary" data-check>Try it</button></div>`,
+   check(){
+     const v=norm($('#a1').value).replace(/!+$/,'');
+     if(H('s1:'+v)===DATA.s1) return {ok:true,key:v,msg:'Logged in! Hagrid used a pet name and a lucky number. That is easy to guess. Never use pet names or lucky numbers for passwords.'};
+     if(v.startsWith('fang')) return {ok:false,msg:'Right dog! Now check the number and the ending.'};
+     return {ok:false,msg:'Access denied. Read the three clue cards again.'};
+   },
+   hints:['Hagrid\'s dog is called Fang.','Dog\'s name + lucky number + !','Put it together: Fang + 7 + !']},
+
+ { id:2, name:'Phishing Patrol', strands:['DC'],
+   story:'Four owl-mails arrived in the school inbox. Some are phishing, which means fake messages that try to trick you into giving away private information. Can you spot the fakes?',
+   cards:[['Clues to look for','Does it panic you? Does it ask for a password or private info? Is the address spelled strangely? Does it promise a free prize? Real school email ends in <b>hogwarts.edu</b>.']],
+   task:'Tick EVERY email that is phishing, then press Check.',
+   ui:()=>EMAILS.map((e,i)=>`<label class="opt email"><div class="hd"><input type="checkbox" data-e="${i}" style="margin-right:8px"><b>${e.subj}</b><br><span style="color:var(--mute)">From: ${e.from}</span></div><div class="bd">${e.body}</div></label>`).join('')+`<div class="row"><button class="primary" data-check>Check my picks</button></div>`,
+   check(){
+     const sel=[...document.querySelectorAll('[data-e]')].map(x=>x.checked?1:0);
+     let wrong=0; sel.forEach((s,i)=>{ if(H('s2:'+i+':'+s)!==DATA.s2[i]) wrong++; });
+     if(!wrong) return {ok:true,key:sel.map((s,i)=>s?i:'').filter(x=>x!=='').join(','),msg:'Well spotted! Why each one:\n'+EMAILS.map((e,i)=>(sel[i]?'[FAKE] ':'[REAL] ')+(i+1)+'. '+e.why).join('\n')};
+     return {ok:false,msg:wrong+' of your 4 choices '+(wrong>1?'are':'is')+' wrong. Look at the sender address and what the email asks you to do.'};
+   },
+   hints:['Two emails are fake and two are real.','Which two ask for a password or private info, or promise a free prize?','Look at the sender addresses. One has a number instead of a letter.']},
+
+ { id:3, name:'Decode the Message', strands:['CT','TU'],
+   story:'The Hex-Hacker left a secret message in code. It is a <b>Caesar cipher</b>: every letter has been moved forward along the alphabet. You must move each letter back to read it.',
+   cards:[
+     ['Secret message','<span class="mono big" id="cipherA"></span>'],
+     ['How to decode','Move each letter <b>BACK</b> by the key number. Example with key 1: C becomes B, B becomes A.'],
+     ['The key','The key is the number of detectives in the <b>Famous Five</b>.']],
+   task:'Decode the message. What is the secret spell word at the end?',
+   ui:()=>`<div class="row"><span>Shift:</span> <input type="range" id="shift" min="0" max="25" value="0" aria-label="Shift amount"> <b class="mono" id="shiftV">0</b></div>
+   <div class="card"><div class="lbl">Decoder preview</div><span class="mono" id="decoded"></span></div>
+   <div class="row"><input type="text" id="a3" placeholder="spell word" autocomplete="off" aria-label="Spell word"><button class="primary" data-check>Submit</button></div>`,
+   after(){
+     $('#cipherA').textContent=DATA.cA;
+     const upd=()=>{const k=+$('#shift').value;$('#shiftV').textContent=k;$('#decoded').textContent=caesar(DATA.cA,-k);};
+     $('#shift').oninput=upd; upd();
+   },
+   check(){
+     const v=norm($('#a3').value);
+     if(H('s3:'+v)===DATA.s3) return {ok:true,key:v,msg:'Decoded! Turning a message into a secret code is called encryption. Only people who know the key can read it.'};
+     return {ok:false,msg:'Not yet. How many children are in the Famous Five? Slide the decoder to that number.'};
+   },
+   hints:['The Famous Five has five detectives, so the key is 5.','Slide the decoder to 5. The sentence should turn into English.','The spell word is the last word of the message.']},
+
+ { id:4, name:'Spot Unsafe Behaviour', strands:['DC'],
+   story:'The Hex-Hacker learned about the castle from things people shared online. Read each story and find the ones that are not safe.',
+   cards:[['Think about','Is a password being shared? Is private info like an address or a code on show? Is someone being unsafe or unkind? Are they tricked by a pop-up?']],
+   task:'Tick every story that shows UNSAFE online behaviour.',
+   ui:()=>SCEN.map((s,i)=>`<label class="opt"><input type="checkbox" data-s="${i}"><span>${s}</span></label>`).join('')+`<div class="row"><button class="primary" data-check>Check</button></div>`,
+   check(){
+     const sel=[...document.querySelectorAll('[data-s]')].map(x=>x.checked?1:0);
+     let wrong=0; sel.forEach((s,i)=>{ if(H('s4:'+i+':'+s)!==DATA.s4[i]) wrong++; });
+     if(!wrong) return {ok:true,key:sel.map((s,i)=>s?i:'').filter(x=>x!=='').join(','),msg:'Correct! Unsafe: sharing a password, posting an address and door code, and typing private info into a pop-up. Safe: a strong secret password, telling a teacher about unkind comments, and asking before sharing a photo.'};
+     return {ok:false,msg:wrong+' of your 6 choices '+(wrong>1?'are':'is')+' wrong. Three stories are unsafe and three are safe.'};
+   },
+   hints:['Three stories are unsafe.','Passwords should never be shared. Private info should never be posted.','Telling a teacher about unkind comments and asking before sharing are GOOD choices.']},
+
+ { id:5, name:'File Detective', strands:['DF','TU'],
+   story:'The Hex-Hacker left a file on the castle computer. Every file has <b>metadata</b>, which is information about who made it and when. Find the suspicious file!',
+   cards:[
+     ['Clue 1','Real castle accounts: <span class="mono">hermione, mcgonagall, george, hagrid, dumbledore</span>. Anyone else is an intruder.'],
+     ['Clue 2','The hacker works at <b>night</b>, when everyone is asleep.'],
+     ['Secret code','Hackers swap letters for numbers: <span class="mono">4 = A &nbsp; 3 = E &nbsp; 0 = O</span>']],
+   task:'Find the intruder\'s file. Type the word hidden in its name, using normal letters.',
+   ui:()=>`<div class="tw"><table><tr><th>File name</th><th>Made by</th><th>When</th></tr>${FILES.map(f=>`<tr><td class="mono">${f[0]}</td><td class="mono">${f[1]}</td><td>${f[2]}</td></tr>`).join('')}</table></div>
+   <div class="row" style="margin-top:12px"><input type="text" id="a5" placeholder="hidden word(s)" autocomplete="off" aria-label="Hidden word"><button class="primary" data-check>Submit</button></div>`,
+   check(){
+     const w=$('#a5').value.toLowerCase().replace(/[\s_\-]/g,'');
+     if(H('s5:'+w)===DATA.s5) return {ok:true,key:w,msg:'Found it! The name sh4d0w_k3y becomes "shadow key". Metadata (who made a file, and when) helps detectives find intruders.'};
+     if(w==='sh4d0wk3y') return {ok:false,msg:'Almost! Now swap the numbers back into letters.'};
+     return {ok:false,msg:'Not yet. Find the file made by someone who is NOT on the castle list, at night.'};
+   },
+   hints:['Cross out every file made by a castle account.','One file was made by "unknown_user" at 03:12 in the morning.','sh4d0w_k3y: 4 is A and 0 is O and 3 is E.']},
+
+ { id:6, name:'Build a Secure Password', strands:['DCR','DC'],
+   story:'Last job: make a new strong password for the headmaster\'s account. Make one up now. Do not use a real password you already have!',
+   cards:[
+     ['Top tip','Mix 3 random words, a number and a symbol, like <span class="mono">Frog-Castle-42!</span>'],
+     ['Remember','Never use your name, your pet, or the names of famous wizards.']],
+   task:'Create a password that meets ALL the rules.',
+   ui:()=>`<div class="row"><input type="text" id="a6" placeholder="make a password" autocomplete="off" spellcheck="false" aria-label="New password"></div>
+   <div class="meter"><i id="meterBar"></i></div><div id="crack" class="mono" style="color:var(--mute);font-size:.85rem"></div>
+   <ul class="req" id="reqs"></ul>
+   <div class="row"><button class="primary" id="lockPw" data-check disabled>Lock it in</button></div>`,
+   rules:[
+     ['At least 10 characters', p=>p.length>=10],
+     ['Has UPPERCASE and lowercase letters', p=>/[a-z]/.test(p)&&/[A-Z]/.test(p)],
+     ['Has a number', p=>/\d/.test(p)],
+     ['Has a symbol (like ! ? # -)', p=>/[^A-Za-z0-9\s]/.test(p)],
+     ['No spaces', p=>p.length>0&&!/\s/.test(p)],
+     ['No easy words (password, harry, potter, hogwarts...)', p=>p.length>0&&!BLOCK.some(w=>p.toLowerCase().includes(w))],
+     ['No 3 of the same character in a row (aaa, 111)', p=>p.length>0&&!/(.)\1\1/.test(p)]
+   ],
+   after(){
+     const st=stations[5];
+     const upd=()=>{
+       const p=$('#a6').value; let pass=0;
+       $('#reqs').innerHTML=st.rules.map(r=>{const ok=r[1](p);if(ok)pass++;return `<li class="${ok?'ok':''}">${r[0]}</li>`}).join('');
+       let pool=0; if(/[a-z]/.test(p))pool+=26; if(/[A-Z]/.test(p))pool+=26; if(/\d/.test(p))pool+=10; if(/[^A-Za-z0-9]/.test(p))pool+=33;
+       const bits=p.length?p.length*Math.log2(pool||1):0;
+       const secs=Math.pow(2,bits)/1e10;
+       $('#meterBar').style.width=Math.min(100,bits/80*100)+'%';
+       $('#meterBar').style.background=pass===st.rules.length?'var(--accent)':(bits>50?'var(--warn)':'var(--bad)');
+       $('#crack').textContent=p?'A fast computer could crack this in: '+human(secs):'';
+       $('#lockPw').disabled=pass!==st.rules.length;
+     };
+     $('#a6').oninput=upd; upd();
+   },
+   check(){
+     const p=$('#a6').value;
+     if(stations[5].rules.every(r=>r[1](p))) return {ok:true,key:'ok',msg:'Strong! The longer the password, the harder it is to crack. Use a different password for every account and keep it secret.'};
+     return {ok:false,msg:'Not all rules are met yet.'};
+   },
+   hints:['Try three random words with a number and symbol: Frog-Castle-42!','Make it at least 10 characters.','Check each rule in the list. A tick means it passes.']}
+];
+
+function human(s){
+  if(s<1) return 'less than a second';
+  if(s>31536000*1e9) return 'billions of years';
+  const u=[['years',31536000],['days',86400],['hours',3600],['minutes',60],['seconds',1]];
+  for(const [n,v] of u){ if(s>=v){ const x=s/v; return (x>=1000?Math.round(x).toLocaleString():Math.round(x))+' '+n; } }
+}
+
+/* ===== State & timer ===== */
+const PENALTY=20000;
+let deadline=0, hintsUsed=0, solved={}, digits={}, current=0, hintShown={}, timer=null, timeUpShown=false;
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id)); window.scrollTo(0,0); }
+function fmt(ms){ ms=Math.max(0,ms); const s=Math.ceil(ms/1000); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function tick(){
+  const left=deadline-Date.now(); const t=$('#timer');
+  t.textContent=left>=0?fmt(left):'+'+fmt(-left);
+  t.className='mono'+(left<120000?' crit':left<300000?' low':'');
+  if(left<=0&&!timeUpShown){ timeUpShown=true; $('#hintinfo').textContent='Time is up! Keep going, you can still finish.'; }
+}
+
+function renderNav(){
+  $('#nav').innerHTML=stations.map((s,i)=>`<button class="${i===current?'on':''} ${solved[s.id]?'done':''}" data-go="${i}"><span class="mono" style="color:var(--mute)">${solved[s.id]?'DONE':'STATION'}</span> <b>${s.id}</b><small>${s.name}</small></button>`).join('');
+  $('#slots').innerHTML=stations.map(s=>`<span class="slot ${solved[s.id]?'f':''}">${solved[s.id]?digits[s.id]:'?'}</span>`).join('');
+  const all=stations.every(s=>solved[s.id]);
+  $('#vaultIn').disabled=!all; $('#vaultBtn').disabled=!all;
+  if(hintsUsed&&!timeUpShown) $('#hintinfo').textContent='Hints: '+hintsUsed+' (−'+hintsUsed*PENALTY/1000+'s)';
+}
+function renderStation(){
+  const s=stations[current];
+  $('#station').innerHTML=`<div class="panel">
+    <h3>Station ${s.id}: ${s.name}</h3>
+    <div class="tags">${s.strands.map(k=>`<span class="tag">${STR[k]}</span>`).join('')}</div>
+    <p class="story">${s.story}</p>
+    ${s.cards.map(c=>`<div class="card"><div class="lbl">Clue card · ${c[0]}</div>${c[1]}</div>`).join('')}
+    <div class="task"><b>Your task:</b> ${s.task}</div>
+    <div id="ui">${s.ui()}</div>
+    <div class="fb" id="fb"></div>
+    <div class="reward" id="reward">Magic number from station ${s.id}<br><b id="rd"></b></div>
+    <div class="hintbar"><button id="hintBtn">Hint (−20s)</button><span class="hint" id="hintTxt"></span></div>
+  </div>`;
+  if(s.after) s.after();
+  const n=hintShown[s.id]||0;
+  if(n) $('#hintTxt').innerHTML=s.hints.slice(0,n).map((h,i)=>`Hint ${i+1}: ${esc(h)}`).join('<br>');
+  if(solved[s.id]) markSolved(s,'Already solved.');
+  $('#hintBtn').onclick=()=>{
+    const k=hintShown[s.id]||0; if(k>=s.hints.length) return;
+    hintShown[s.id]=k+1; hintsUsed++; deadline-=PENALTY; tick(); renderNav();
+    $('#hintTxt').innerHTML=s.hints.slice(0,k+1).map((h,i)=>`Hint ${i+1}: ${esc(h)}`).join('<br>');
+    if(k+1>=s.hints.length) $('#hintBtn').disabled=true;
+  };
+  if((hintShown[s.id]||0)>=s.hints.length) $('#hintBtn').disabled=true;
+  const cb=document.querySelector('[data-check]');
+  if(cb) cb.onclick=()=>{
+    const r=s.check(); const fb=$('#fb');
+    if(r.ok){ solved[s.id]=true; digits[s.id]=digitFor(s.id,r.key); markSolved(s,r.msg); renderNav(); }
+    else{ fb.className='fb bad'; fb.textContent='Not yet. '+r.msg; }
+  };
+  document.querySelectorAll('#ui input[type=text]').forEach(inp=>inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&cb&&!cb.disabled) cb.click(); }));
+}
+function markSolved(s,msg){
+  const fb=$('#fb'); fb.className='fb ok'; fb.textContent='Solved! '+msg;
+  $('#rd').textContent=digits[s.id]; $('#reward').style.display='block';
+}
+
+/* ===== Teacher key: AES-GCM, key derived from the teacher password (PBKDF2) ===== */
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function unlockTeacher(){
+  const fb=$('#tfb');
+  try{
+    if(!(window.crypto&&crypto.subtle)) throw new Error('nocrypto');
+    const km=await crypto.subtle.importKey('raw',new TextEncoder().encode($('#tpw').value),'PBKDF2',false,['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(DATA.t.salt),iterations:DATA.t.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(DATA.t.iv)},key,b64(DATA.t.ct));
+    $('#teacher').innerHTML=new TextDecoder().decode(pt); $('#lock').style.display='none';
+  }catch(e){
+    fb.className='fb bad'; fb.textContent=(e&&e.message==='nocrypto')?'This browser cannot decrypt here (needs a secure connection).':'Wrong password.';
+  }
+}
+$('#tbtn').onclick=unlockTeacher;
+$('#tpw').addEventListener('keydown',e=>{ if(e.key==='Enter') unlockTeacher(); });
+
+/* ===== Wiring ===== */
+$('#startCode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#startBtn').click(); });
+$('#startBtn').onclick=()=>{
+  if(H('start:'+$('#startCode').value.trim())!==DATA.start){ const f=$('#startFb'); f.className='fb bad'; f.textContent='Wrong start code. Ask your teacher.'; return; }
+  const mins=+$('#mins').value||20;
+  deadline=Date.now()+mins*60000; timer=setInterval(tick,500); tick();
+  show('game'); renderNav(); renderStation();
+};
+$('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(!b) return; current=+b.dataset.go; renderNav(); renderStation(); });
+$('#vaultBtn').onclick=()=>{
+  const fb=$('#vaultFb'); const typed=$('#vaultIn').value.trim();
+  if(H('vault:'+typed)===DATA.vault){
+    clearInterval(timer);
+    const left=deadline-Date.now();
+    $('#winStats').innerHTML=(left>=0?'Escaped with <b>'+fmt(left)+'</b> to spare':'Escaped <b>'+fmt(-left)+'</b> over time')+' · Hints used: <b>'+hintsUsed+'</b>';
+    $('#skills').innerHTML=Object.keys(STR).map(k=>`<span class="tag" style="margin:3px;padding:5px 12px">${STR[k]}</span>`).join('');
+    show('win');
+  } else { fb.className='fb bad'; fb.textContent='Wrong code. Type the six magic numbers in order, station 1 to 6.'; }
+};
+$('#vaultIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#vaultBtn').click(); });
+</script>
+
+</body>
+</html>
