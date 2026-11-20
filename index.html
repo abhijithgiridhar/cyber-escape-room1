@@ -81,6 +81,10 @@ input[type=range]{width:100%;max-width:420px}
 .seg{display:flex;gap:6px}
 .seg button.on{border-color:var(--blue);background:var(--tab)}
 @media (max-width:520px){.hero h2{font-size:1.5rem}}
+.vwrap{position:relative;aspect-ratio:16/9;max-width:100%;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#000;margin:10px 0 6px}
+.vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vcap{color:var(--mute);font-size:.9rem;margin:0 0 14px}
+.vcap a{color:var(--blue,var(--accent,#6ea8ff))}
 </style>
 
 <header>
@@ -151,6 +155,14 @@ input[type=range]{width:100%;max-width:420px}
     <p class="big" id="winStats"></p>
     <div class="row"><button class="primary" type="button" id="againBtn">Start a new round</button></div>
     <div class="alert mono" style="border-color:var(--accent);background:var(--okbg);color:#c9ffe9">&gt; HEX-HACKER: "Curses! Foiled by a bunch of clever kids."</div>
+  </div>
+  <div class="panel" id="vidPanel" style="margin-bottom:16px">
+    <h3>Watch and learn</h3>
+    <p class="story">Two short videos to go with what you just did. The first one is playing now.</p>
+    <div class="vwrap" id="v1"></div>
+    <p class="vcap"><b>Pause &amp; Think Online</b> by Common Sense Education. <a href="https://www.youtube.com/watch?v=X_duZ-1LApg" target="_blank" rel="noopener">Open on YouTube</a></p>
+    <div class="vwrap" id="v2"></div>
+    <p class="vcap"><b>Get Cyber Safe: Create a strong password</b> by the Communications Security Establishment. <a href="https://www.youtube.com/watch?v=YeUFL3GTFT0" target="_blank" rel="noopener">Open on YouTube</a></p>
   </div>
   <div class="panel">
     <h3>Debrief: talk it over</h3>
@@ -463,6 +475,8 @@ $('#vaultBtn').onclick=()=>{
     $('#winStats').innerHTML=(left>=0?'Escaped with <b>'+fmt(left)+'</b> to spare':'Escaped <b>'+fmt(-left)+'</b> over time')+' · Hints used: <b>'+hintsUsed+'</b>';
     $('#skills').innerHTML=Object.keys(STR).map(k=>`<span class="tag" style="margin:3px;padding:5px 12px">${STR[k]}</span>`).join('');
     show('win');
+    $('#v1').innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/X_duZ-1LApg?autoplay=1&rel=0" title="Pause and Think Online" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    $('#v2').innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/YeUFL3GTFT0?rel=0" title="Get Cyber Safe: Create a strong password" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>';
   } else { fb.className='fb bad'; fb.textContent='Wrong code. Type the six magic numbers in order, station 1 to 6.'; }
 };
 $('#vaultIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#vaultBtn').click(); });
